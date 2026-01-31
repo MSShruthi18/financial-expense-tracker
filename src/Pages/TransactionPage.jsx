@@ -1,134 +1,168 @@
 import React, { useState } from "react";
 import "./App.css";
-import { Pie } from "react-chartjs-2";
+import { Pie, Bar } from "react-chartjs-2";
 import { useNavigate } from "react-router-dom";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title, CategoryScale, LinearScale } from "chart.js";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from "chart.js";
 
-// Register necessary Chart.js components
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend,
-  Title,
-  CategoryScale,
-  LinearScale
-);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 const TransactionPage = () => {
-  const [amount, setAmount] = useState(0);
-  const [description, setDescription] = useState(""); // Description input
-  const [category, setCategory] = useState("income"); // 'income' or 'expense'
-  const [records, setRecords] = useState(() => {
-    // Load records from localStorage or start with an empty array
-    const storedRecords = JSON.parse(localStorage.getItem("transactionRecords"));
-    return storedRecords || [];
-  });
-  const navigate = useNavigate(); // Navigation hook
+  const navigate = useNavigate();
 
-  const handleAmountChange = (e) => {
-    setAmount(e.target.value);
-  };
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("Food");
+  const [type, setType] = useState("income");
+  const [date, setDate] = useState("");
+  const [message, setMessage] = useState("");
 
-  const handleDescriptionChange = (e) => {
-    setDescription(e.target.value);
-  };
+  const [records, setRecords] = useState(() =>
+    JSON.parse(localStorage.getItem("transactionRecords")) || []
+  );
 
-  const handleCategoryChange = (e) => {
-    setCategory(e.target.value);
-  };
-//function to add record
-  const handleAddRecord = () => {
-    if (amount > 0 && description.trim() !== "") {
-      const newRecord = { category, amount: parseFloat(amount), description };
-      const updatedRecords = [...records, newRecord];
-      setRecords(updatedRecords);
-      localStorage.setItem("transactionRecords", JSON.stringify(updatedRecords)); // Save to localStorage
-      setAmount(0);
-      setDescription(""); // Reset description field after adding
-    } else {
-      alert("Please enter a valid amount and description.");
+  // TOTALS
+const totalIncome = records
+  .filter(r => r.type === "income")
+  .reduce((s, r) => s + Number(r.amount), 0);
+
+const totalExpense = records
+  .filter(r => r.type === "expense")
+  .reduce((s, r) => s + Number(r.amount), 0);
+
+
+    if (type === "expense" && totalIncome === 0) {
+  setMessage("⚠️ Warning: No income added yet");
+}
+
+  // ADD RECORD
+  const handleAdd = () => {
+    if (!amount || amount <= 0) {
+      setMessage("❌ Amount must be positive");
+      return;
     }
+    if (!description.trim()) {
+      setMessage("❌ Description required");
+      return;
+    }
+    if (!date) {
+      setMessage("❌ Please select date");
+      return;
+    }
+    if (type === "expense" && amount > totalIncome) {
+      setMessage("❌ Expense cannot exceed income");
+      return;
+    }
+
+
+ const newRecord = {
+  amount: Number(amount),   // 🔥 important
+  description,
+  category,
+  type,
+  date
+};
+
+
+    const updated = [...records, newRecord];
+    setRecords(updated);
+    localStorage.setItem("transactionRecords", JSON.stringify(updated));
+
+    setAmount("");
+    setDescription("");
+    setDate("");
+    setMessage("✅ Transaction Added");
   };
 
-  // Calculate totals for income and expenses
-  const totalIncome = records.filter(record => record.category === "income").reduce((acc, record) => acc + record.amount, 0);
-  const totalExpense = records.filter(record => record.category === "expense").reduce((acc, record) => acc + record.amount, 0);
-
-  // Pie chart data
-  const chartData = {
+  // PIE CHART
+  const pieData = {
     labels: ["Income", "Expense"],
     datasets: [
       {
         data: [totalIncome, totalExpense],
-        backgroundColor: ["green", "red"],
-        hoverOffset: 4,
+        backgroundColor: ["#22c55e", "#ef4444"],
       },
     ],
   };
 
-  // Pie chart options with reduced size
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      tooltip: {
-        enabled: true,
+  // BAR CHART (monthly)
+  const months = {};
+  records.forEach(r => {
+    const m = new Date(r.date).toLocaleString("default", { month: "short" });
+    months[m] = (months[m] || 0) + r.amount * (r.type === "expense" ? -1 : 1);
+  });
+
+  const barData = {
+    labels: Object.keys(months),
+    datasets: [
+      {
+        label: "Net Balance",
+        data: Object.values(months),
+        backgroundColor: "#6366f1",
       },
-    },
-    aspectRatio: 1, // Ensures the chart is a square
+    ],
   };
 
-  const handleViewTransactions = () => {
-    navigate("/Viewtransaction"); // Navigate to Viewtransaction page
-  };
+const exportCSV = () => {
+  const csv =
+    "Amount,Description,Type\n" +
+    records.map(r =>
+      `${r.amount},${r.description},${r.type}`
+    ).join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "transactions.csv";
+  a.click();
+};
+
 
   return (
-    <div className="border">
-    <div className="transactionbody">
-      <div >
-        <center><h1>Financial Tracker</h1></center>
+    <div className="transaction-page">
+      <h1>💳 Financial Tracker</h1>
 
-        
-          <h3>Enter your data</h3>
-          
-            <label>Amount: </label><br></br>
-            <input type="number" value={amount} onChange={handleAmountChange} />
-          
-          <br></br><br></br>
+      <div className="transaction-container">
+        {/* FORM */}
+        <div className="transaction-card">
+          <h3>Add Transaction</h3>
 
-          
-            <label>Description: </label><br></br>
-            <input
-              type="text"
-              value={description}
-              onChange={handleDescriptionChange}
-              placeholder="Enter description (e.g., Salary, Groceries)"
-            />
-          
-          <br></br><br></br>
+          <input type="number" placeholder="Amount" value={amount}
+            onChange={e => setAmount(e.target.value)} />
 
-          
-            <label>Category: </label><br></br>
-            <select value={category} onChange={handleCategoryChange}>
-              <option value="income">Income</option>
-              <option value="expense">Expense</option>
-            </select>
-          <br></br><br></br>
+          <input type="text" placeholder="Description" value={description}
+            onChange={e => setDescription(e.target.value)} />
 
-          <button onClick={handleAddRecord}>ADD RECORD</button><br></br><br></br>
-          <button onClick={handleViewTransactions}>VIEW TRANSACTIONS</button><br></br><br></br>
-          <button onClick={() => navigate(-1)}> BACK TO HOME</button> {/* Go back to previous page */}
+
+          <select value={type} onChange={e => setType(e.target.value)}>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+          
+         
+
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+
+          {message && <p className="message">{message}</p>}
+
+          <button onClick={handleAdd}>➕ Add</button>
+          <button onClick={exportCSV}>📤 Export CSV</button>
+          <button className="secondary" onClick={() => navigate(-1)}>⬅ Back</button>
         </div>
 
-        <div>
-          <h3>Graphical Representation</h3>
-          <div style={{ position: 'relative', height: '300px', width: '300px' }}>
-            <Pie data={chartData} options={chartOptions} />
-          </div>
-        </div><br></br>
+        {/* CHARTS */}
+        <div className="chart-card">
+          <h3>Overview</h3>
+          <Pie data={pieData} />
+          <p className="income">Income ₹{totalIncome}</p>
+          <p className="expense">Expense ₹{totalExpense}</p>
+        </div>
 
-      
-    </div>
+        <div className="chart-card">
+          <h3>Monthly Balance</h3>
+          <Bar data={barData} />
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,61 +1,46 @@
 import "./App.css";
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-function MainPage()
- {
- 
+export default function MainPage() {
+  const navigate = useNavigate(); // ✅ correctly defined
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    navigate("/");
+  };
+
   return (
-    <div style={containerStyle}>
-      <h1>Welcome to Financial Tracker</h1>
-      <p>Track your expenses and manage your finances easily!</p>
+    <div className="dashboard">
+      <h1 className="title">💰 Financial Expense Tracker</h1>
 
-      <div style={buttonContainerStyle}>
-        <Link to="/TransactionPage" style={buttonStyle}>
-          Add New Transaction
+      <p className="subtitle">
+        Track expenses, analyze spending, and stay financially smart.
+      </p>
+
+      <div className="card-container">
+        <Link to="/TransactionPage" className="card add">
+          ➕
+          <h3>Add Transaction</h3>
+          <p>Record your daily expenses</p>
         </Link>
-        <Link to="/Viewtransaction" style={buttonStyle}>
-          View All Transactions
+
+        <Link to="/Viewtransaction" className="card view">
+          📊
+          <h3>View Transactions</h3>
+          <p>See all your expense history</p>
         </Link>
-        <br></br>
-        <Link to="/Managetransaction" style={buttonStyle}>
-          Manage All Transactions
+
+        <Link to="/Managetransaction" className="card manage">
+          🛠️
+          <h3>Manage Transactions</h3>
+          <p>Edit or delete records</p>
         </Link>
       </div>
+<br></br><br></br>
+      <button onClick={handleLogout} className="logout-btn">
+        Logout
+      </button>
     </div>
   );
 }
-
-// Styles
-const containerStyle = {
-  maxWidth: '800px',
-  margin: '0px',
-  padding: '40px',
-  backgroundColor: 'lightblue',
-  borderRadius: '8px',
-  boxShadow: '0 8px 12px rgba(54, 49, 49, 0.1)',
-  textAlign: 'center',
- 
-};
-
-const buttonContainerStyle = {
-  marginTop: '30px',
-  display: 'flex',
-  justifyContent: 'center',
-  gap: '20px',
-};
-
-const buttonStyle = {
-  textDecoration: 'none',//underline else
-  backgroundColor: 'green',
-  color: 'white',
-  padding: '15px 30px',
-  borderRadius: '5px',
-  fontSize: '1.2rem',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-
-};
-
-export default MainPage;
-

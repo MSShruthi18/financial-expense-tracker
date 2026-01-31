@@ -1,27 +1,60 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Login from './Pages/Login'; // Import your Login component
-import SignInpage from './Pages/SignInpage'; // Import your SignInpage component
-import MainPage from './Pages/MainPage'; // Import your Dashboard component (for redirection after login)
+import Login from './Pages/Login';
+import SignInpage from './Pages/SignInpage';
+import MainPage from './Pages/MainPage';
 import TransactionPage from './Pages/TransactionPage';
 import Viewtransaction from './Pages/Viewtransaction';
 import Managetransaction from './Pages/Managetransaction';
 import PageNotFound from './Pages/PageNotFound';
+import ProtectedRoute from './Pages/ProtectedRoute';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Define main routes */}
-        <Route path="/" element={<SignInpage />} /> {/* Landing page / Sign-in */}
-        <Route path="/login" element={<Login />} /> {/* Main login page */}
-        <Route path="/MainPage" element={<MainPage />} /> {/* After login redirect */}
-        <Route path="/TransactionPage" element={<TransactionPage />} /> {/* Transaction Page */}
-        <Route path="/Viewtransaction" element={<Viewtransaction />} /> {/* View Transaction */}
-        <Route path="/Managetransaction" element={<Managetransaction />} /> {/* Manage Transaction */}
-        
-        {/* 404 Page Not Found Route */}
-        <Route path="*" element={<PageNotFound />} /> {/* Wildcard for unmatched routes */}
+        {/* Public Routes */}
+        <Route path="/" element={<Login />} />
+        <Route path="/signin" element={<SignInpage />} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/MainPage"
+          element={
+            <ProtectedRoute>
+              <MainPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/TransactionPage"
+          element={
+            <ProtectedRoute>
+              <TransactionPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/Viewtransaction"
+          element={
+            <ProtectedRoute>
+              <Viewtransaction />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/Managetransaction"
+          element={
+            <ProtectedRoute>
+              <Managetransaction />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 404 */}
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,86 +1,64 @@
 import "./App.css";
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // useNavigate for programmatic navigation
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const navigate = useNavigate(); // navigate for redirection
-
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = (e) => {
-    e.preventDefault();//prevents occurance of default action
+    e.preventDefault();
+    setErrorMessage("");
 
-    // Reset error message before validation
-    setErrorMessage('');
-
-    // Validate input fields (check if username or password is empty)
     if (!username || !password) {
-      setErrorMessage('Please enter both username and password.');
+      setErrorMessage("Please enter both username and password.");
       return;
     }
 
-    // Get stored users from localStorage
-    const storedUsers = JSON.parse(localStorage.getItem('users')) || [];
-
-    // Debugging: log the stored users and entered values
-    console.log("Stored Users:", storedUsers);
-    console.log("Entered Username:", username);
-    console.log("Entered Password:", password);
-
-    // Check if entered data matches any stored credentials
-    const user = storedUsers.find(
-      (user) => user.username === username && user.password === password
+    const users = JSON.parse(localStorage.getItem("users")) || [];
+    const user = users.find(
+      (u) => u.username === username && u.password === password
     );
+if (user) {
+  localStorage.setItem("isLoggedIn", "true"); // 🔐 login flag
+  setErrorMessage('');
+  navigate('/MainPage');
+}
 
-    if (user) {
-      setErrorMessage(''); // Clear error message
-      navigate('/MainPage'); // If successful, navigate to the main page
-    } else {
-      setErrorMessage('Invalid credentials. Please try again.');
-    }
+   
+    else setErrorMessage("Invalid credentials. Please try again.");
   };
 
   return (
-    <div className="App">
-      <center>
-        <form className="loginform" onSubmit={handleSubmit}>
-          <br />
-          <h3>LOGIN FORM</h3>
-          <h4>Welcome back, Please login with your Personal Info</h4>
+    <div className="auth-page">
+      <form className="auth-card" onSubmit={handleSubmit}>
+        <h2>Welcome Back 👋</h2>
+        <p className="subtitle">Login to your account</p>
 
-          <input
-            type="text"
-            placeholder="Enter Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            id="textbox"
-            aria-label="Username"
-          />
-          <br />
-          <br />
-          <input
-            type="password"
-            placeholder="Enter Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            id="textbox"
-            aria-label="Password"
-          />
-          <br />
-          <br />
-          <button type="submit" id="loginbutton">Login</button>
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
 
-          {/* Link to SignIn page */}
-          <h5>
-            Don't have an Account ? <Link to="/">SIGN IN</Link>
-          </h5>
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-          {/* Display error message if any */}
-          {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
-        </form>
-      </center>
+        {errorMessage && <p className="error">{errorMessage}</p>}
+
+        <button type="submit">Login</button>
+
+        <p className="switch">
+          Don’t have an account? <Link to="/signin">Sign up</Link>
+        </p>
+      </form>
     </div>
   );
 }

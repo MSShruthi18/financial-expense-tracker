@@ -1,91 +1,91 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./App.css";
 
-const Viewtransaction = () => {
-  const [filter, setFilter] = useState("all");
-  const [search, setSearch] = useState("");
-  const [filteredRecords, setFilteredRecords] = useState([]);
+export default function Viewtransaction() {
   const navigate = useNavigate();
+  const [transactions, setTransactions] = useState([]);
 
-  // Load records from localStorage
   useEffect(() => {
-    const storedRecords = JSON.parse(localStorage.getItem("transactionRecords")) || [];
-    setFilteredRecords(storedRecords);
+    const data =
+      JSON.parse(localStorage.getItem("transactionRecords")) || [];
+
+    // sort by date (old → new) for running balance
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // calculate running balance
+    let balance = 0;
+    const withBalance = data.map((t) => {
+      balance =
+        t.type === "income"
+          ? balance + t.amount
+          : balance - t.amount;
+      return { ...t, balance };
+    });
+
+    setTransactions(withBalance.reverse()); // latest on top
   }, []);
 
-  // Filter records based on the selected filter and search query
-  useEffect(() => {
-    const storedRecords = JSON.parse(localStorage.getItem("transactionRecords")) || [];
-    const newFilteredRecords = storedRecords.filter((record) => {
-      if (filter === "all") return true;
-      if (filter === "income" && record.category === "income") return true;
-      if (filter === "expense" && record.category === "expense") return true;
-      if (filter === "description" && record.description.toLowerCase().includes(search.toLowerCase())) return true;
-      if (filter === "amount" && record.amount.toString().includes(search)) return true;
-      return false;
-    });
-    setFilteredRecords(newFilteredRecords);
-  }, [filter, search]); // Re-run when filter or search changes
-
   return (
-    <div className="container">
-      <div className="content-wrapper">
-        <h1>Transaction Records</h1>
+    <div className="statement-page">
+      <h1>Account Statement</h1>
 
+      {/* HEADER SUMMARY */}
+      <div className="statement-header">
         <div>
-          <label>Filter by: </label>
-          <select onChange={(e) => setFilter(e.target.value)} value={filter}>
-            <option value="all">All</option>
-            <option value="income">Income</option>
-            <option value="expense">Expense</option>
-            <option value="description">Description</option>
-            <option value="amount">Amount</option>
-          </select>
-        </div><br></br>
-
-        {filter === "description" || filter === "amount" ? (
-          <div>
-            <label>Search: </label>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={filter === "description" ? "Enter description to search" : "Enter amount to search"}
-            />
-          </div>
-        ) : null}
-        <br></br>
-
-        {/* Table of filtered records */}
-        <table border="1" cellPadding={"5"} cellSpacing={"3"} className="viewtable">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Amount</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRecords.length === 0 ? (
-              <tr>
-                <td colSpan="3">No records found</td>
-              </tr>
-            ) : (
-              filteredRecords.map((record, index) => (
-                <tr key={index}>
-                  <td>{record.category === "income" ? "Income" : "Expense"}</td>
-                  <td>${record.amount}</td>
-                  <td>{record.description}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-<br></br><br></br>
-        <center><button onClick={() => navigate(-1)}>Go Back</button> {/* Go back to previous page */}</center>
+          <span>Total Balance</span>
+          <h2>
+            ₹
+            {transactions.length > 0
+              ? transactions[0].balance
+              : 0}
+          </h2>
+        </div>
+        <button onClick={() => navigate(-1)}>Back</button>
       </div>
+
+      {/* TABLE HEADER */}
+      <div className="statement-table header">
+        <div>Date</div>
+      
+        <div>Type</div>
+        <div></div>
+        <div>Amount</div>
+        <div>Balance</div>
+      </div>
+
+      {/* TRANSACTIONS */}
+      {transactions.length === 0 ? (
+        <p className="empty">No transactions found</p>
+      ) : (
+        transactions.map((t, index) => (
+          <div key={index} className="statement-table row">
+            <div>{t.date}</div>
+        <div></div>
+            <div>
+              <span
+                className={
+                  t.type === "income"
+                    ? "badge credit"
+                    : "badge debit"
+                }
+              >
+                {t.type === "income" ? "CREDIT" : "DEBIT"}
+              </span>
+            </div>
+            <div
+              className={
+                t.type === "income"
+                  ? "amount credit"
+                  : "amount debit"
+              }
+            >
+              {t.type === "income" ? "+" : "-"}₹{t.amount}
+            </div>
+            <div className="balance">₹{t.balance}</div>
+          </div>
+        ))
+      )}
     </div>
   );
-};
-
-export default Viewtransaction;
+}

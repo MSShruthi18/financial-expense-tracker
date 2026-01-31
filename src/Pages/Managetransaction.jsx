@@ -1,66 +1,128 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
+import "./App.css";
 
 const Managetransaction = () => {
   const [transactions, setTransactions] = useState([]);
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
-  // Load transactions from localStorage
   useEffect(() => {
-    const storedTransactions = JSON.parse(localStorage.getItem("transactionRecords")) || [];
-    setTransactions(storedTransactions);
+    const stored =
+      JSON.parse(localStorage.getItem("transactionRecords")) || [];
+    setTransactions(stored);
   }, []);
 
-  // Function to handle deleting a transaction
   const handleDelete = (index) => {
-    const updatedTransactions = [...transactions];
-    updatedTransactions.splice(index, 1); // Remove the record at the given index
-    setTransactions(updatedTransactions); // Update the state
-
-    // Update localStorage
-    localStorage.setItem("transactionRecords", JSON.stringify(updatedTransactions));
+    if (!window.confirm("Are you sure you want to delete this transaction?")) {
+      return;
+    }
+    const updated = transactions.filter((_, i) => i !== index);
+    setTransactions(updated);
+    localStorage.setItem("transactionRecords", JSON.stringify(updated));
   };
+
+ const filteredTransactions = transactions.filter((t) => {
+  const matchesType =
+    filter === "all" || t.type?.toLowerCase() === filter;
+
+  const matchesSearch = t.description
+    ?.toLowerCase()
+    .includes(search.toLowerCase());
+
+  return matchesType && matchesSearch;
+});
+
+const totalIncome = transactions
+  .filter((t) => t.type?.toLowerCase() === "income")
+  .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+const totalExpense = transactions
+  .filter((t) => t.type?.toLowerCase() === "expense")
+  .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
   return (
     <div className="container">
       <div className="content-wrapper">
-        <h1>Manage Transactions</h1>
+       <center><h1 >Manage Transactions</h1></center> 
 
-        {/* Table of transactions with delete functionality */}
-        <table className="viewtable"  border="1" cellPadding={"5"} cellSpacing={"3"}>
+        {/* Summary Cards */}
+        <div className="summary">
+          <div className="card income">
+            <h3>Total Income</h3>
+            <p>₹ {totalIncome}</p>
+          </div>
+          <div className="card expense">
+            <h3>Total Expense</h3>
+            <p>₹ {totalExpense}</p>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="controls">
+          <input
+            type="text"
+            placeholder="Search description..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+            <option value="all">All</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+
+        {/* Table */}
+        <table className="viewtable">
           <thead>
             <tr>
-              <th>Category</th>
+              <th>Type</th>
               <th>Amount</th>
               <th>Description</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            {transactions.length === 0 ? (
+            {filteredTransactions.length === 0 ? (
               <tr>
-                <td colSpan="4">No transactions available</td>
+                <td colSpan="4" style={{ textAlign: "center" }}>
+                  No transactions found
+                </td>
               </tr>
             ) : (
-              transactions.map((transaction, index) => (
+              filteredTransactions.map((t, index) => (
                 <tr key={index}>
-                  <td>{transaction.category === "income" ? "Income" : "Expense"}</td>
-                  <td>${transaction.amount}</td>
-                  <td>{transaction.description}</td>
+                  <td
+                    style={{
+                      color: t.category === "income" ? "green" : "red",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {t.type.toUpperCase()}
+                  </td>
+                  <td>₹ {t.amount}</td>
+                  <td>{t.description}</td>
                   <td>
-                    {/* Show delete button for every transaction */}
-                    <center><button className="deletebutton" onClick={() => handleDelete(index)} style={{ backgroundColor: "red", color: "white" }}>
+                    <button
+                      className="deletebutton"
+                      onClick={() => handleDelete(index)}
+                    >
                       Delete
-                    </button></center>
+                    </button>
                   </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
-<br></br><br></br>
-        <button onClick={() => navigate(-1)}>Go Back</button> {/* Go back to the Main page */}
+
+        <br />
+        <button className="backbtn" onClick={() => navigate(-1)}>
+          ← Go Back
+        </button>
       </div>
     </div>
   );
