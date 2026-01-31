@@ -11,7 +11,7 @@ const TransactionPage = () => {
 
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("Food");
+ 
   const [type, setType] = useState("income");
   const [date, setDate] = useState("");
   const [message, setMessage] = useState("");
@@ -57,7 +57,6 @@ const totalExpense = records
  const newRecord = {
   amount: Number(amount),   // 🔥 important
   description,
-  category,
   type,
   date
 };
